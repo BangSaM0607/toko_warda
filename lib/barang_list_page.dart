@@ -162,7 +162,19 @@ class _BarangListPageState extends State<BarangListPage> {
                                 Text(
                                   'Harga: Rp ${item['harga']} / ${item['satuan']}',
                                 ),
-                                Text('Stok: ${item['stok']} ${item['satuan']}'),
+                                Text(
+                                  'Stok: ${item['stok']} ${item['satuan']}',
+                                  style: TextStyle(
+                                    color:
+                                        item['stok'] <= 5
+                                            ? Colors.red
+                                            : Colors.black,
+                                    fontWeight:
+                                        item['stok'] <= 5
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
+                                  ),
+                                ),
                               ],
                             ),
                             trailing: Row(
