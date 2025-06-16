@@ -12,7 +12,18 @@ class BarangListPage extends StatefulWidget {
 class _BarangListPageState extends State<BarangListPage> {
   final supabase = Supabase.instance.client;
   List<dynamic> barangList = [];
-  List<dynamic> filteredList = [];
+
+  String keyword = '';
+  String selectedKategori = 'Semua';
+  List<String> kategoriList = [
+    'Semua',
+    'Sembako',
+    'Minuman',
+    'Snack',
+    'Alat Dapur',
+    'Kebutuhan Rumah',
+    'Perawatan Tubuh',
+  ];
 
   final TextEditingController searchController = TextEditingController();
 
@@ -20,41 +31,24 @@ class _BarangListPageState extends State<BarangListPage> {
   void initState() {
     super.initState();
     fetchBarang();
-    searchController.addListener(_filterSearchResults);
-  }
-
-  @override
-  void dispose() {
-    searchController.dispose();
-    super.dispose();
   }
 
   Future<void> fetchBarang() async {
-    final response = await supabase
-        .from('toko_warda')
-        .select()
-        .order('id', ascending: true);
+    final data = await supabase.from('toko_warda').select().order('id');
+    final filtered =
+        data.where((item) {
+          final nama = item['nama_barang'].toString().toLowerCase();
+          final kategori = item['kategori'].toString().toLowerCase();
+          final matchNama = nama.contains(keyword.toLowerCase());
+          final matchKategori =
+              selectedKategori == 'Semua' ||
+              kategori == selectedKategori.toLowerCase();
+          return matchNama && matchKategori;
+        }).toList();
 
     setState(() {
-      barangList = response;
-      filteredList = response;
+      barangList = filtered;
     });
-  }
-
-  void _filterSearchResults() {
-    final query = searchController.text.toLowerCase();
-    if (query.isEmpty) {
-      setState(() => filteredList = barangList);
-    } else {
-      setState(() {
-        filteredList =
-            barangList.where((item) {
-              final nama = item['nama_barang'].toString().toLowerCase();
-              final kategori = item['kategori'].toString().toLowerCase();
-              return nama.contains(query) || kategori.contains(query);
-            }).toList();
-      });
-    }
   }
 
   Future<void> deleteBarang(int id) async {
@@ -68,7 +62,7 @@ class _BarangListPageState extends State<BarangListPage> {
       appBar: AppBar(
         title: const Text('Data Barang Toko WARDA'),
         actions: [
-          IconButton(onPressed: fetchBarang, icon: const Icon(Icons.refresh)),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: fetchBarang),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -85,25 +79,75 @@ class _BarangListPageState extends State<BarangListPage> {
         children: [
           Padding(
             padding: const EdgeInsets.all(12),
-            child: TextField(
-              controller: searchController,
-              decoration: InputDecoration(
-                labelText: 'Cari barang atau kategori...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+            child: Column(
+              children: [
+                TextField(
+                  controller: searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Cari nama barang...',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        searchController.clear();
+                        keyword = '';
+                        fetchBarang();
+                      },
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  onChanged: (value) {
+                    keyword = value;
+                    fetchBarang();
+                  },
                 ),
-              ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    const Text('Kategori:'),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: selectedKategori,
+                        items:
+                            kategoriList.map((kategori) {
+                              return DropdownMenuItem(
+                                value: kategori,
+                                child: Text(kategori),
+                              );
+                            }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            selectedKategori = value!;
+                          });
+                          fetchBarang();
+                        },
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
           Expanded(
             child:
-                filteredList.isEmpty
+                barangList.isEmpty
                     ? const Center(child: Text('Data tidak ditemukan'))
                     : ListView.builder(
-                      itemCount: filteredList.length,
+                      itemCount: barangList.length,
                       itemBuilder: (context, index) {
-                        final item = filteredList[index];
+                        final item = barangList[index];
                         return Card(
                           margin: const EdgeInsets.symmetric(
                             horizontal: 12,
