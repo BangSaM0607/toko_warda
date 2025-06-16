@@ -51,9 +51,13 @@ class _BarangListPageState extends State<BarangListPage> {
     });
   }
 
-  Future<void> deleteBarang(int id) async {
-    await supabase.from('toko_warda').delete().eq('id', id);
-    fetchBarang();
+  Future<void> deleteBarang(String id) async {
+    try {
+      await supabase.from('toko_warda').delete().eq('id', id);
+      fetchBarang();
+    } catch (e) {
+      print('Gagal hapus: $e');
+    }
   }
 
   @override
@@ -202,7 +206,7 @@ class _BarangListPageState extends State<BarangListPage> {
                                     color: Colors.red,
                                   ),
                                   onPressed: () async {
-                                    await deleteBarang(item['id']);
+                                    await deleteBarang(item['id'].toString());
                                   },
                                 ),
                               ],
