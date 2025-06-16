@@ -12,11 +12,21 @@ class BarangListPage extends StatefulWidget {
 class _BarangListPageState extends State<BarangListPage> {
   final supabase = Supabase.instance.client;
   List<dynamic> barangList = [];
+  List<dynamic> filteredList = [];
+
+  final TextEditingController searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     fetchBarang();
+    searchController.addListener(_filterSearchResults);
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
   }
 
   Future<void> fetchBarang() async {
@@ -24,7 +34,27 @@ class _BarangListPageState extends State<BarangListPage> {
         .from('toko_warda')
         .select()
         .order('id', ascending: true);
-    setState(() => barangList = response);
+
+    setState(() {
+      barangList = response;
+      filteredList = response;
+    });
+  }
+
+  void _filterSearchResults() {
+    final query = searchController.text.toLowerCase();
+    if (query.isEmpty) {
+      setState(() => filteredList = barangList);
+    } else {
+      setState(() {
+        filteredList =
+            barangList.where((item) {
+              final nama = item['nama_barang'].toString().toLowerCase();
+              final kategori = item['kategori'].toString().toLowerCase();
+              return nama.contains(query) || kategori.contains(query);
+            }).toList();
+      });
+    }
   }
 
   Future<void> deleteBarang(int id) async {
@@ -35,7 +65,12 @@ class _BarangListPageState extends State<BarangListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Data Barang Toko WARDA')),
+      appBar: AppBar(
+        title: const Text('Data Barang Toko WARDA'),
+        actions: [
+          IconButton(onPressed: fetchBarang, icon: const Icon(Icons.refresh)),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           await Navigator.push(
@@ -46,54 +81,83 @@ class _BarangListPageState extends State<BarangListPage> {
         },
         child: const Icon(Icons.add),
       ),
-      body:
-          barangList.isEmpty
-              ? const Center(child: CircularProgressIndicator())
-              : ListView.builder(
-                itemCount: barangList.length,
-                itemBuilder: (context, index) {
-                  final item = barangList[index];
-                  return Card(
-                    margin: const EdgeInsets.all(8),
-                    child: ListTile(
-                      title: Text(item['nama_barang']),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Kategori: ${item['kategori']}'),
-                          Text(
-                            'Harga: Rp ${item['harga']} / ${item['satuan']}',
-                          ),
-                          Text('Stok: ${item['stok']} ${item['satuan']}'),
-                        ],
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit, color: Colors.blue),
-                            onPressed: () async {
-                              await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => BarangFormPage(data: item),
-                                ),
-                              );
-                              fetchBarang();
-                            },
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () async {
-                              await deleteBarang(item['id']);
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: TextField(
+              controller: searchController,
+              decoration: InputDecoration(
+                labelText: 'Cari barang atau kategori...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
+            ),
+          ),
+          Expanded(
+            child:
+                filteredList.isEmpty
+                    ? const Center(child: Text('Data tidak ditemukan'))
+                    : ListView.builder(
+                      itemCount: filteredList.length,
+                      itemBuilder: (context, index) {
+                        final item = filteredList[index];
+                        return Card(
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          child: ListTile(
+                            title: Text(item['nama_barang']),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Kategori: ${item['kategori']}'),
+                                Text(
+                                  'Harga: Rp ${item['harga']} / ${item['satuan']}',
+                                ),
+                                Text('Stok: ${item['stok']} ${item['satuan']}'),
+                              ],
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.edit,
+                                    color: Colors.blue,
+                                  ),
+                                  onPressed: () async {
+                                    await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder:
+                                            (_) => BarangFormPage(data: item),
+                                      ),
+                                    );
+                                    fetchBarang();
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.delete,
+                                    color: Colors.red,
+                                  ),
+                                  onPressed: () async {
+                                    await deleteBarang(item['id']);
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+          ),
+        ],
+      ),
     );
   }
 }
