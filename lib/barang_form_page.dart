@@ -3,7 +3,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class BarangFormPage extends StatefulWidget {
   final Map<String, dynamic>? data;
-
   const BarangFormPage({super.key, this.data});
 
   @override
@@ -11,31 +10,33 @@ class BarangFormPage extends StatefulWidget {
 }
 
 class _BarangFormPageState extends State<BarangFormPage> {
-  final _formKey = GlobalKey<FormState>();
+  final supabase = Supabase.instance.client;
+
   final TextEditingController namaController = TextEditingController();
   final TextEditingController kategoriController = TextEditingController();
   final TextEditingController hargaController = TextEditingController();
   final TextEditingController stokController = TextEditingController();
-
-  final supabase = Supabase.instance.client;
+  final TextEditingController satuanController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     if (widget.data != null) {
-      namaController.text = widget.data!['nama_barang'];
-      kategoriController.text = widget.data!['kategori'];
+      namaController.text = widget.data!['nama_barang'] ?? '';
+      kategoriController.text = widget.data!['kategori'] ?? '';
       hargaController.text = widget.data!['harga'].toString();
       stokController.text = widget.data!['stok'].toString();
+      satuanController.text = widget.data!['satuan'] ?? '';
     }
   }
 
-  Future<void> saveData() async {
+  Future<void> simpanBarang() async {
     final data = {
       'nama_barang': namaController.text,
       'kategori': kategoriController.text,
-      'harga': double.parse(hargaController.text),
-      'stok': int.parse(stokController.text),
+      'harga': int.tryParse(hargaController.text) ?? 0,
+      'stok': int.tryParse(stokController.text) ?? 0,
+      'satuan': satuanController.text,
     };
 
     if (widget.data == null) {
@@ -46,8 +47,7 @@ class _BarangFormPageState extends State<BarangFormPage> {
           .update(data)
           .eq('id', widget.data!['id']);
     }
-
-    Navigator.pop(context);
+    if (mounted) Navigator.pop(context);
   }
 
   @override
@@ -57,48 +57,37 @@ class _BarangFormPageState extends State<BarangFormPage> {
         title: Text(widget.data == null ? 'Tambah Barang' : 'Edit Barang'),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              TextFormField(
-                controller: namaController,
-                decoration: const InputDecoration(labelText: 'Nama Barang'),
-                validator:
-                    (value) => value!.isEmpty ? 'Tidak boleh kosong' : null,
-              ),
-              TextFormField(
-                controller: kategoriController,
-                decoration: const InputDecoration(labelText: 'Kategori'),
-                validator:
-                    (value) => value!.isEmpty ? 'Tidak boleh kosong' : null,
-              ),
-              TextFormField(
-                controller: hargaController,
-                decoration: const InputDecoration(labelText: 'Harga'),
-                keyboardType: TextInputType.number,
-                validator:
-                    (value) => value!.isEmpty ? 'Tidak boleh kosong' : null,
-              ),
-              TextFormField(
-                controller: stokController,
-                decoration: const InputDecoration(labelText: 'Stok'),
-                keyboardType: TextInputType.number,
-                validator:
-                    (value) => value!.isEmpty ? 'Tidak boleh kosong' : null,
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    saveData();
-                  }
-                },
-                child: const Text('Simpan'),
-              ),
-            ],
-          ),
+        padding: const EdgeInsets.all(16),
+        child: ListView(
+          children: [
+            TextField(
+              controller: namaController,
+              decoration: const InputDecoration(labelText: 'Nama Barang'),
+            ),
+            TextField(
+              controller: kategoriController,
+              decoration: const InputDecoration(labelText: 'Kategori'),
+            ),
+            TextField(
+              controller: hargaController,
+              decoration: const InputDecoration(labelText: 'Harga'),
+              keyboardType: TextInputType.number,
+            ),
+            TextField(
+              controller: stokController,
+              decoration: const InputDecoration(labelText: 'Stok'),
+              keyboardType: TextInputType.number,
+            ),
+            TextField(
+              controller: satuanController,
+              decoration: const InputDecoration(labelText: 'Satuan'),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: simpanBarang,
+              child: Text(widget.data == null ? 'Simpan' : 'Update'),
+            ),
+          ],
         ),
       ),
     );
