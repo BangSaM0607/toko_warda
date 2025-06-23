@@ -1,10 +1,8 @@
-// barang_list_page.dart
-
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'barang_form_page.dart';
-import 'login_page.dart'; // untuk ambil currentUserRole
-import 'package:intl/intl.dart';
+import 'login_page.dart';
+import '../main.dart';
 
 class BarangListPage extends StatefulWidget {
   const BarangListPage({super.key});
@@ -14,211 +12,238 @@ class BarangListPage extends StatefulWidget {
 }
 
 class _BarangListPageState extends State<BarangListPage> {
-  final supabase = Supabase.instance.client;
   List<dynamic> barangList = [];
+  bool isLoading = false;
+  String searchQuery = '';
+  String selectedKategori = 'Semua';
+
+  final kategoriList = [
+    'Semua',
+    'Sembako',
+    'Minuman',
+    'Snack',
+    'Kesehatan',
+    'Kecantikan',
+    'Lainnya',
+  ];
+
+  bool isAdmin() {
+    return currentUserRole == 'admin';
+  }
+
+  bool isKasir() {
+    return currentUserRole == 'kasir';
+  }
 
   @override
   void initState() {
     super.initState();
-    fetchBarang();
+    loadBarang();
   }
 
-  Future<void> fetchBarang() async {
-    final data = await supabase.from('toko_warda').select().order('id');
+  Future<void> loadBarang() async {
     setState(() {
-      barangList = data;
+      isLoading = true;
     });
+
+    try {
+      final data = await Supabase.instance.client
+          .from('toko_warda')
+          .select()
+          .order('id', ascending: false);
+
+      setState(() {
+        barangList = data;
+      });
+    } catch (e) {
+      showSnackbar('Gagal load data: $e');
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 
-  Future<void> deleteBarang(String id) async {
+  Future<void> deleteBarang(int id) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Konfirmasi'),
+            content: const Text('Yakin hapus barang?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Batal'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Hapus'),
+              ),
+            ],
+          ),
+    );
+
+    if (confirm != true) return;
+
     try {
-      await supabase.from('toko_warda').delete().eq('id', id);
-      fetchBarang();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Barang berhasil dihapus'),
-          behavior: SnackBarBehavior.floating,
-          margin: EdgeInsets.symmetric(horizontal: 50, vertical: 200),
-          duration: Duration(seconds: 2),
-        ),
-      );
+      await Supabase.instance.client.from('toko_warda').delete().eq('id', id);
+
+      showSnackbar('Barang berhasil dihapus');
+      loadBarang();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Gagal hapus: $e'),
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.symmetric(horizontal: 50, vertical: 200),
-          duration: const Duration(seconds: 2),
-        ),
+      showSnackbar('Gagal hapus: $e');
+    }
+  }
+
+  void showSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.symmetric(horizontal: 50, vertical: 200),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void logout() async {
+    await Supabase.instance.client.auth.signOut();
+
+    currentUserRole = '';
+
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginPage()),
       );
     }
   }
 
-  String formatRupiah(int angka) {
-    return NumberFormat.currency(
-      locale: 'id',
-      symbol: 'Rp ',
-      decimalDigits: 0,
-    ).format(angka);
-  }
-
   @override
   Widget build(BuildContext context) {
+    final filteredList =
+        barangList.where((barang) {
+          final nama = (barang['nama_barang'] ?? '').toString().toLowerCase();
+          final kategori = (barang['kategori'] ?? '').toString().toLowerCase();
+
+          final matchesSearch = nama.contains(searchQuery.toLowerCase());
+          final matchesKategori =
+              selectedKategori == 'Semua' ||
+              kategori == selectedKategori.toLowerCase();
+
+          return matchesSearch && matchesKategori;
+        }).toList();
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Data Barang Toko WARDA'),
+        title: const Text('Daftar Barang'),
+        automaticallyImplyLeading: false,
         actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: fetchBarang),
+          IconButton(icon: const Icon(Icons.logout), onPressed: logout),
         ],
       ),
       body: Column(
         children: [
-          if (currentUserRole == 'admin' || currentUserRole == 'kasir')
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: ElevatedButton.icon(
-                icon: const Icon(Icons.add),
-                label: const Text('Tambah Barang'),
-                onPressed: () async {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const BarangFormPage()),
-                  );
-                  if (result == 'saved') {
-                    fetchBarang();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Barang berhasil ditambahkan'),
-                        behavior: SnackBarBehavior.floating,
-                        margin: EdgeInsets.symmetric(
-                          horizontal: 50,
-                          vertical: 200,
-                        ),
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                  }
-                },
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: TextField(
+              decoration: const InputDecoration(
+                labelText: 'Cari nama barang...',
+                prefixIcon: Icon(Icons.search),
               ),
+              onChanged: (value) {
+                setState(() {
+                  searchQuery = value;
+                });
+              },
             ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: DropdownButtonFormField<String>(
+              value: selectedKategori,
+              items:
+                  kategoriList
+                      .map(
+                        (kategori) => DropdownMenuItem(
+                          value: kategori,
+                          child: Text(kategori),
+                        ),
+                      )
+                      .toList(),
+              onChanged: (value) {
+                setState(() {
+                  selectedKategori = value!;
+                });
+              },
+              decoration: const InputDecoration(labelText: 'Filter Kategori'),
+            ),
+          ),
+          const SizedBox(height: 12),
           Expanded(
             child:
-                barangList.isEmpty
-                    ? const Center(child: Text('Belum ada data barang'))
+                isLoading
+                    ? const Center(child: CircularProgressIndicator())
                     : ListView.builder(
-                      itemCount: barangList.length,
+                      itemCount: filteredList.length,
                       itemBuilder: (context, index) {
-                        final item = barangList[index];
+                        final barang = filteredList[index];
+                        final stok = barang['stok'] ?? 0;
+                        final harga = barang['harga'] ?? 0;
+
                         return Card(
                           margin: const EdgeInsets.symmetric(
                             horizontal: 12,
                             vertical: 6,
                           ),
                           child: ListTile(
-                            title: Text(item['nama_barang']),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Kategori: ${item['kategori']}'),
-                                Text('Harga: ${formatRupiah(item['harga'])}'),
-                                Text(
-                                  'Stok: ${item['stok']}',
-                                  style: TextStyle(
-                                    color:
-                                        item['stok'] <= 5
-                                            ? Colors.red
-                                            : Colors.black,
-                                    fontWeight:
-                                        item['stok'] <= 5
-                                            ? FontWeight.bold
-                                            : FontWeight.normal,
-                                  ),
-                                ),
-                              ],
+                            title: Text(barang['nama_barang'] ?? ''),
+                            subtitle: Text(
+                              'Kategori: ${barang['kategori']} • Stok: $stok • Harga: $harga',
                             ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (currentUserRole == 'admin' ||
-                                    currentUserRole == 'kasir')
-                                  IconButton(
-                                    icon: const Icon(Icons.edit),
-                                    onPressed: () async {
-                                      final result = await Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder:
-                                              (_) => BarangFormPage(data: item),
-                                        ),
-                                      );
-                                      if (result == 'saved') {
-                                        fetchBarang();
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              'Barang berhasil diperbarui',
-                                            ),
-                                            behavior: SnackBarBehavior.floating,
-                                            margin: EdgeInsets.symmetric(
-                                              horizontal: 50,
-                                              vertical: 200,
-                                            ),
-                                            duration: Duration(seconds: 2),
+                            trailing:
+                                isAdmin() || isKasir()
+                                    ? Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(
+                                            Icons.edit,
+                                            color: Colors.blue,
                                           ),
-                                        );
-                                      }
-                                    },
-                                  ),
-                                if (currentUserRole == 'admin')
-                                  IconButton(
-                                    icon: const Icon(Icons.delete),
-                                    onPressed: () async {
-                                      final confirm = await showDialog<bool>(
-                                        context: context,
-                                        builder:
-                                            (context) => AlertDialog(
-                                              title: const Text(
-                                                'Konfirmasi Hapus',
+                                          onPressed: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder:
+                                                    (_) => BarangFormPage(
+                                                      barang: barang,
+                                                    ),
                                               ),
-                                              content: Text(
-                                                'Yakin hapus "${item['nama_barang']}"?',
-                                              ),
-                                              actions: [
-                                                TextButton(
-                                                  child: const Text('Batal'),
-                                                  onPressed:
-                                                      () => Navigator.pop(
-                                                        context,
-                                                        false,
-                                                      ),
-                                                ),
-                                                ElevatedButton(
-                                                  style:
-                                                      ElevatedButton.styleFrom(
-                                                        backgroundColor:
-                                                            Colors.red,
-                                                      ),
-                                                  child: const Text('Hapus'),
-                                                  onPressed:
-                                                      () => Navigator.pop(
-                                                        context,
-                                                        true,
-                                                      ),
-                                                ),
-                                              ],
+                                            ).then((_) => loadBarang());
+                                          },
+                                        ),
+                                        if (isAdmin())
+                                          IconButton(
+                                            icon: const Icon(
+                                              Icons.delete,
+                                              color: Colors.red,
                                             ),
-                                      );
-                                      if (confirm == true) {
-                                        await deleteBarang(
-                                          item['id'].toString(),
-                                        );
-                                      }
-                                    },
-                                  ),
-                              ],
-                            ),
+                                            onPressed: () {
+                                              final id = barang['id'];
+                                              if (id is int) {
+                                                deleteBarang(id);
+                                              } else {
+                                                showSnackbar(
+                                                  'Error: ID barang bukan integer',
+                                                );
+                                              }
+                                            },
+                                          ),
+                                      ],
+                                    )
+                                    : null,
                           ),
                         );
                       },
@@ -226,6 +251,19 @@ class _BarangListPageState extends State<BarangListPage> {
           ),
         ],
       ),
+      floatingActionButton:
+          isAdmin() || isKasir()
+              ? FloatingActionButton.extended(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const BarangFormPage()),
+                  ).then((_) => loadBarang());
+                },
+                icon: const Icon(Icons.add),
+                label: const Text('Tambah'),
+              )
+              : null,
     );
   }
 }

@@ -1,8 +1,8 @@
-// login_page.dart
-
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../main.dart';
 import 'barang_list_page.dart';
+import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -11,60 +11,57 @@ class LoginPage extends StatefulWidget {
   State<LoginPage> createState() => _LoginPageState();
 }
 
-String currentUserRole = 'viewer'; // default viewer
-
 class _LoginPageState extends State<LoginPage> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-
   bool isLoading = false;
 
   Future<void> login() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      showError('Email & Password wajib diisi');
+      return;
+    }
+
     setState(() {
       isLoading = true;
     });
 
     try {
-      final res = await Supabase.instance.client.auth.signInWithPassword(
-        email: emailController.text,
-        password: passwordController.text,
+      final response = await Supabase.instance.client.auth.signInWithPassword(
+        email: email,
+        password: password,
       );
 
-      if (res.session != null) {
-        final user = Supabase.instance.client.auth.currentUser;
-
-        final data =
-            await Supabase.instance.client
-                .from('user_toko')
-                .select('role')
-                .eq('email', user?.email)
-                .single();
-
-        currentUserRole = data['role'];
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const BarangListPage()),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Login gagal'),
-            behavior: SnackBarBehavior.floating,
-            margin: EdgeInsets.symmetric(horizontal: 50, vertical: 200),
-            duration: Duration(seconds: 2),
-          ),
-        );
+      final userId = response.user?.id;
+      if (userId == null) {
+        showError('Login gagal');
+        return;
       }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.symmetric(horizontal: 50, vertical: 200),
-          duration: const Duration(seconds: 2),
-        ),
+
+      final data =
+          await Supabase.instance.client
+              .from('user_toko')
+              .select()
+              .eq('email', email)
+              .maybeSingle();
+
+      if (data != null) {
+        currentUserRole = (data['role'] ?? '').trim().toLowerCase();
+      } else {
+        currentUserRole = 'viewer';
+      }
+
+      print('ROLE LOGIN: $currentUserRole');
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const BarangListPage()),
       );
+    } catch (e) {
+      showError('Login gagal: $e');
     } finally {
       setState(() {
         isLoading = false;
@@ -72,33 +69,56 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  void showError(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: ListView(
-          children: [
-            TextField(
-              controller: emailController,
-              decoration: const InputDecoration(labelText: 'Email'),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: passwordController,
-              decoration: const InputDecoration(labelText: 'Password'),
-              obscureText: true,
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: isLoading ? null : login,
-              child:
-                  isLoading
-                      ? const CircularProgressIndicator()
-                      : const Text('Login'),
-            ),
-          ],
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Login Toko Warda', style: TextStyle(fontSize: 24)),
+              const SizedBox(height: 24),
+              TextField(
+                controller: emailController,
+                decoration: const InputDecoration(labelText: 'Email'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: passwordController,
+                obscureText: true,
+                decoration: const InputDecoration(labelText: 'Password'),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: isLoading ? null : login,
+                  child:
+                      isLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text('Login'),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const RegisterPage()),
+                  );
+                },
+                child: const Text('Daftar akun baru'),
+              ),
+            ],
+          ),
         ),
       ),
     );
