@@ -1,21 +1,21 @@
-import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'barang_form_page.dart';
-import 'login_page.dart';
-import '../main.dart';
+import 'package:flutter/material.dart'; // Import package Flutter Material UI
+import 'package:supabase_flutter/supabase_flutter.dart'; // Import package Supabase Flutter
+import 'barang_form_page.dart'; // Import halaman form tambah/edit barang
+import 'login_page.dart'; // Import halaman login (untuk logout)
+import '../main.dart'; // Import role user global dari main.dart
 
 class BarangListPage extends StatefulWidget {
-  const BarangListPage({super.key});
+  const BarangListPage({super.key}); // Constructor
 
   @override
-  State<BarangListPage> createState() => _BarangListPageState();
+  State<BarangListPage> createState() => _BarangListPageState(); // Buat state page
 }
 
 class _BarangListPageState extends State<BarangListPage> {
-  List<dynamic> barangList = [];
-  bool isLoading = false;
-  String searchQuery = '';
-  String selectedKategori = 'Semua';
+  List<dynamic> barangList = []; // List barang (dari Supabase)
+  bool isLoading = false; // Status loading
+  String searchQuery = ''; // String pencarian
+  String selectedKategori = 'Semua'; // Filter kategori (dropdown)
 
   final kategoriList = [
     'Semua',
@@ -25,41 +25,41 @@ class _BarangListPageState extends State<BarangListPage> {
     'Kesehatan',
     'Kecantikan',
     'Lainnya',
-  ];
+  ]; // List kategori
 
   bool isAdmin() {
-    return currentUserRole == 'admin';
+    return currentUserRole == 'admin'; // Cek role admin
   }
 
   bool isKasir() {
-    return currentUserRole == 'kasir';
+    return currentUserRole == 'kasir'; // Cek role kasir
   }
 
   @override
   void initState() {
-    super.initState();
-    loadBarang();
+    super.initState(); // Panggil init bawaan
+    loadBarang(); // Load barang saat page tampil
   }
 
   Future<void> loadBarang() async {
     setState(() {
-      isLoading = true;
+      isLoading = true; // Tampilkan loading
     });
 
     try {
       final data = await Supabase.instance.client
           .from('toko_warda')
           .select()
-          .order('id', ascending: false);
+          .order('id', ascending: false); // Query barang
 
       setState(() {
-        barangList = data;
+        barangList = data; // Simpan ke list
       });
     } catch (e) {
-      showSnackbar('Gagal load data: $e');
+      showSnackbar('Gagal load data: $e'); // Tampilkan error
     } finally {
       setState(() {
-        isLoading = false;
+        isLoading = false; // Selesai loading
       });
     }
   }
@@ -73,33 +73,35 @@ class _BarangListPageState extends State<BarangListPage> {
             content: const Text('Yakin hapus barang?'),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context, false),
+                onPressed: () => Navigator.pop(context, false), // Batal
                 child: const Text('Batal'),
               ),
               ElevatedButton(
-                onPressed: () => Navigator.pop(context, true),
+                onPressed: () => Navigator.pop(context, true), // Hapus
                 child: const Text('Hapus'),
               ),
             ],
           ),
     );
 
-    if (confirm != true) return;
+    if (confirm != true) return; // Kalau batal → keluar
 
     try {
-      await Supabase.instance.client.from('toko_warda').delete().eq('id', id);
-
-      showSnackbar('Barang berhasil dihapus');
-      loadBarang();
+      await Supabase.instance.client
+          .from('toko_warda')
+          .delete()
+          .eq('id', id); // Hapus di Supabase
+      showSnackbar('Barang berhasil dihapus'); // Tampilkan pesan
+      loadBarang(); // Reload list
     } catch (e) {
-      showSnackbar('Gagal hapus: $e');
+      showSnackbar('Gagal hapus: $e'); // Error
     }
   }
 
   void showSnackbar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: Text(message), // Isi pesan
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.symmetric(horizontal: 50, vertical: 200),
         duration: const Duration(seconds: 2),
@@ -108,14 +110,14 @@ class _BarangListPageState extends State<BarangListPage> {
   }
 
   void logout() async {
-    await Supabase.instance.client.auth.signOut();
-
-    currentUserRole = '';
-
+    await Supabase.instance.client.auth.signOut(); // Logout Supabase
+    currentUserRole = ''; // Reset role global
     if (mounted) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const LoginPage()),
+        MaterialPageRoute(
+          builder: (_) => const LoginPage(),
+        ), // Kembali ke login
       );
     }
   }
@@ -124,23 +126,34 @@ class _BarangListPageState extends State<BarangListPage> {
   Widget build(BuildContext context) {
     final filteredList =
         barangList.where((barang) {
-          final nama = (barang['nama_barang'] ?? '').toString().toLowerCase();
-          final kategori = (barang['kategori'] ?? '').toString().toLowerCase();
+          final nama =
+              (barang['nama_barang'] ?? '')
+                  .toString()
+                  .toLowerCase(); // Nama barang
+          final kategori =
+              (barang['kategori'] ?? '')
+                  .toString()
+                  .toLowerCase(); // Kategori barang
 
-          final matchesSearch = nama.contains(searchQuery.toLowerCase());
+          final matchesSearch = nama.contains(
+            searchQuery.toLowerCase(),
+          ); // Filter search
           final matchesKategori =
               selectedKategori == 'Semua' ||
-              kategori == selectedKategori.toLowerCase();
+              kategori == selectedKategori.toLowerCase(); // Filter kategori
 
-          return matchesSearch && matchesKategori;
+          return matchesSearch && matchesKategori; // Return barang yang cocok
         }).toList();
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Daftar Barang'),
-        automaticallyImplyLeading: false,
+        title: const Text('Daftar Barang'), // Judul
+        automaticallyImplyLeading: false, // Hilangkan tombol back
         actions: [
-          IconButton(icon: const Icon(Icons.logout), onPressed: logout),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: logout,
+          ), // Tombol logout
         ],
       ),
       body: Column(
@@ -154,7 +167,7 @@ class _BarangListPageState extends State<BarangListPage> {
               ),
               onChanged: (value) {
                 setState(() {
-                  searchQuery = value;
+                  searchQuery = value; // Update search query
                 });
               },
             ),
@@ -162,7 +175,7 @@ class _BarangListPageState extends State<BarangListPage> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: DropdownButtonFormField<String>(
-              value: selectedKategori,
+              value: selectedKategori, // Kategori terpilih
               items:
                   kategoriList
                       .map(
@@ -174,7 +187,7 @@ class _BarangListPageState extends State<BarangListPage> {
                       .toList(),
               onChanged: (value) {
                 setState(() {
-                  selectedKategori = value!;
+                  selectedKategori = value!; // Update kategori
                 });
               },
               decoration: const InputDecoration(labelText: 'Filter Kategori'),
@@ -184,13 +197,15 @@ class _BarangListPageState extends State<BarangListPage> {
           Expanded(
             child:
                 isLoading
-                    ? const Center(child: CircularProgressIndicator())
+                    ? const Center(
+                      child: CircularProgressIndicator(),
+                    ) // Loading spinner
                     : ListView.builder(
-                      itemCount: filteredList.length,
+                      itemCount: filteredList.length, // Jumlah item
                       itemBuilder: (context, index) {
                         final barang = filteredList[index];
-                        final stok = barang['stok'] ?? 0;
-                        final harga = barang['harga'] ?? 0;
+                        final stok = barang['stok'] ?? 0; // Stok barang
+                        final harga = barang['harga'] ?? 0; // Harga barang
 
                         return Card(
                           margin: const EdgeInsets.symmetric(
@@ -198,7 +213,9 @@ class _BarangListPageState extends State<BarangListPage> {
                             vertical: 6,
                           ),
                           child: ListTile(
-                            title: Text(barang['nama_barang'] ?? ''),
+                            title: Text(
+                              barang['nama_barang'] ?? '',
+                            ), // Nama barang
                             subtitle: Text(
                               'Kategori: ${barang['kategori']} • Stok: $stok • Harga: $harga',
                             ),
@@ -219,9 +236,11 @@ class _BarangListPageState extends State<BarangListPage> {
                                                 builder:
                                                     (_) => BarangFormPage(
                                                       barang: barang,
-                                                    ),
+                                                    ), // Edit barang
                                               ),
-                                            ).then((_) => loadBarang());
+                                            ).then(
+                                              (_) => loadBarang(),
+                                            ); // Reload barang
                                           },
                                         ),
                                         if (isAdmin())
@@ -231,19 +250,20 @@ class _BarangListPageState extends State<BarangListPage> {
                                               color: Colors.red,
                                             ),
                                             onPressed: () {
-                                              final id = barang['id'];
+                                              final id =
+                                                  barang['id']; // Ambil id
                                               if (id is int) {
-                                                deleteBarang(id);
+                                                deleteBarang(id); // Delete
                                               } else {
                                                 showSnackbar(
                                                   'Error: ID barang bukan integer',
-                                                );
+                                                ); // Error id bukan int
                                               }
                                             },
                                           ),
                                       ],
                                     )
-                                    : null,
+                                    : null, // Viewer tidak bisa edit/hapus
                           ),
                         );
                       },
@@ -257,13 +277,15 @@ class _BarangListPageState extends State<BarangListPage> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const BarangFormPage()),
-                  ).then((_) => loadBarang());
+                    MaterialPageRoute(
+                      builder: (_) => const BarangFormPage(),
+                    ), // Tambah barang
+                  ).then((_) => loadBarang()); // Reload
                 },
                 icon: const Icon(Icons.add),
-                label: const Text('Tambah'),
+                label: const Text('Tambah'), // Label button
               )
-              : null,
+              : null, // Viewer tidak bisa tambah
     );
   }
 }
