@@ -1,3 +1,5 @@
+// barang_form_page.dart
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -107,7 +109,12 @@ class _BarangFormPageState extends State<BarangFormPage> {
                   _stokController.text.isEmpty ||
                   _hargaController.text.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Mohon lengkapi semua data')),
+                  const SnackBar(
+                    content: Text('Mohon lengkapi semua data'),
+                    behavior: SnackBarBehavior.floating,
+                    margin: EdgeInsets.symmetric(horizontal: 50, vertical: 200),
+                    duration: Duration(seconds: 2),
+                  ),
                 );
                 return;
               }
@@ -135,7 +142,12 @@ class _BarangFormPageState extends State<BarangFormPage> {
                 Navigator.pop(context, 'saved');
               } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Gagal menyimpan data')),
+                  const SnackBar(
+                    content: Text('Gagal menyimpan data'),
+                    behavior: SnackBarBehavior.floating,
+                    margin: EdgeInsets.symmetric(horizontal: 50, vertical: 200),
+                    duration: Duration(seconds: 2),
+                  ),
                 );
               }
             },

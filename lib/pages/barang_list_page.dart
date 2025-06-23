@@ -1,3 +1,5 @@
+// barang_list_page.dart
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'barang_form_page.dart';
@@ -57,14 +59,24 @@ class _BarangListPageState extends State<BarangListPage> {
       await supabase.from('toko_warda').delete().eq('id', id);
       fetchBarang();
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Barang berhasil dihapus')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Barang berhasil dihapus'),
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.symmetric(horizontal: 50, vertical: 200),
+          duration: Duration(seconds: 2),
+        ),
+      );
     } catch (e) {
       print('Gagal hapus: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Gagal menghapus barang.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Gagal menghapus barang.'),
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.symmetric(horizontal: 50, vertical: 200),
+          duration: Duration(seconds: 2),
+        ),
+      );
     }
   }
 
@@ -181,6 +193,12 @@ class _BarangListPageState extends State<BarangListPage> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('Barang berhasil ditambahkan'),
+                            behavior: SnackBarBehavior.floating,
+                            margin: EdgeInsets.symmetric(
+                              horizontal: 50,
+                              vertical: 200,
+                            ),
+                            duration: Duration(seconds: 2),
                           ),
                         );
                       }
@@ -267,6 +285,13 @@ class _BarangListPageState extends State<BarangListPage> {
                                                 content: Text(
                                                   'Barang berhasil diperbarui',
                                                 ),
+                                                behavior:
+                                                    SnackBarBehavior.floating,
+                                                margin: EdgeInsets.symmetric(
+                                                  horizontal: 50,
+                                                  vertical: 200,
+                                                ),
+                                                duration: Duration(seconds: 2),
                                               ),
                                             );
                                           }
