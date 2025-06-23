@@ -56,6 +56,10 @@ class _BarangListPageState extends State<BarangListPage> {
     try {
       await supabase.from('toko_warda').delete().eq('id', id);
       fetchBarang();
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Barang berhasil dihapus')));
     } catch (e) {
       print('Gagal hapus: $e');
       ScaffoldMessenger.of(
@@ -159,20 +163,27 @@ class _BarangListPageState extends State<BarangListPage> {
                   ],
                 ),
                 const SizedBox(height: 10),
-                // 🔽 Tombol Tambah Barang
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     icon: const Icon(Icons.add),
                     label: const Text('Tambah Barang'),
                     onPressed: () async {
-                      await Navigator.push(
+                      final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (_) => const BarangFormPage(),
                         ),
                       );
-                      fetchBarang();
+
+                      if (result == 'saved') {
+                        fetchBarang();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Barang berhasil ditambahkan'),
+                          ),
+                        );
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
@@ -237,7 +248,7 @@ class _BarangListPageState extends State<BarangListPage> {
                                           color: Colors.blue,
                                         ),
                                         onPressed: () async {
-                                          await Navigator.push(
+                                          final result = await Navigator.push(
                                             context,
                                             MaterialPageRoute(
                                               builder:
@@ -246,7 +257,19 @@ class _BarangListPageState extends State<BarangListPage> {
                                                   ),
                                             ),
                                           );
-                                          fetchBarang();
+
+                                          if (result == 'saved') {
+                                            fetchBarang();
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                  'Barang berhasil diperbarui',
+                                                ),
+                                              ),
+                                            );
+                                          }
                                         },
                                       ),
                                       IconButton(
