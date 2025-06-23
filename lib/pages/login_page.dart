@@ -5,6 +5,7 @@ import 'barang_list_page.dart'; // Import page BarangListPage (setelah login)
 import 'register_page.dart'; // Import page RegisterPage (untuk daftar akun)
 
 class LoginPage extends StatefulWidget {
+  // Widget halaman login
   const LoginPage({super.key}); // Constructor
 
   @override
@@ -12,17 +13,20 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  // State untuk LoginPage
   final emailController = TextEditingController(); // Controller input email
   final passwordController =
       TextEditingController(); // Controller input password
   bool isLoading = false; // Status loading
 
   Future<void> login() async {
+    // Fungsi login
     final email = emailController.text.trim(); // Ambil email
     final password = passwordController.text.trim(); // Ambil password
 
     if (email.isEmpty || password.isEmpty) {
-      showError('Email & Password wajib diisi'); // Validasi kosong
+      // Validasi input kosong
+      showError('Email & Password wajib diisi');
       return;
     }
 
@@ -74,16 +78,17 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    ); // Tampilkan snackbar error
+    // Fungsi menampilkan error snackbar
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
   Widget build(BuildContext context) {
+    // Build UI halaman login
     return Scaffold(
       body: Center(
-        // Tengah layar
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24), // Padding 24
           child: Column(

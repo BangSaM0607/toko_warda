@@ -201,69 +201,83 @@ class _BarangListPageState extends State<BarangListPage> {
                       child: CircularProgressIndicator(),
                     ) // Loading spinner
                     : ListView.builder(
-                      itemCount: filteredList.length, // Jumlah item
+                      itemCount:
+                          filteredList.length, // Jumlah item pada ListView
                       itemBuilder: (context, index) {
-                        final barang = filteredList[index];
-                        final stok = barang['stok'] ?? 0; // Stok barang
-                        final harga = barang['harga'] ?? 0; // Harga barang
+                        final barang =
+                            filteredList[index]; // Ambil data barang per index
+                        final stok =
+                            barang['stok'] ??
+                            0; // Ambil stok barang, default 0 jika null
+                        final harga =
+                            barang['harga'] ??
+                            0; // Ambil harga barang, default 0 jika null
 
                         return Card(
                           margin: const EdgeInsets.symmetric(
                             horizontal: 12,
                             vertical: 6,
-                          ),
+                          ), // Margin kartu
                           child: ListTile(
                             title: Text(
-                              barang['nama_barang'] ?? '',
-                            ), // Nama barang
-                            subtitle: Text(
-                              'Kategori: ${barang['kategori']} • Stok: $stok • Harga: $harga',
+                              barang['nama_barang'] ??
+                                  '', // Tampilkan nama barang
                             ),
-                            trailing:
-                                isAdmin() || isKasir()
+                            subtitle: Text(
+                              'Kategori: ${barang['kategori']} • Stok: $stok • Harga: $harga', // Info kategori, stok, harga
+                            ),
+                            trailing: // Tombol aksi di sebelah kanan
+                                isAdmin() ||
+                                        isKasir() // Jika user admin atau kasir
                                     ? Row(
-                                      mainAxisSize: MainAxisSize.min,
+                                      mainAxisSize:
+                                          MainAxisSize
+                                              .min, // Row sekecil mungkin
                                       children: [
                                         IconButton(
                                           icon: const Icon(
                                             Icons.edit,
                                             color: Colors.blue,
-                                          ),
+                                          ), // Icon edit
                                           onPressed: () {
                                             Navigator.push(
                                               context,
                                               MaterialPageRoute(
                                                 builder:
                                                     (_) => BarangFormPage(
-                                                      barang: barang,
-                                                    ), // Edit barang
+                                                      barang:
+                                                          barang, // Kirim data barang untuk edit
+                                                    ),
                                               ),
                                             ).then(
-                                              (_) => loadBarang(),
-                                            ); // Reload barang
+                                              (_) =>
+                                                  loadBarang(), // Setelah kembali, reload data barang
+                                            );
                                           },
                                         ),
-                                        if (isAdmin())
+                                        if (isAdmin()) // Hanya admin yang bisa hapus
                                           IconButton(
                                             icon: const Icon(
                                               Icons.delete,
                                               color: Colors.red,
-                                            ),
+                                            ), // Icon hapus
                                             onPressed: () {
                                               final id =
-                                                  barang['id']; // Ambil id
+                                                  barang['id']; // Ambil id barang
                                               if (id is int) {
-                                                deleteBarang(id); // Delete
+                                                deleteBarang(
+                                                  id,
+                                                ); // Hapus barang
                                               } else {
                                                 showSnackbar(
-                                                  'Error: ID barang bukan integer',
-                                                ); // Error id bukan int
+                                                  'Error: ID barang bukan integer', // Error jika id bukan int
+                                                );
                                               }
                                             },
                                           ),
                                       ],
                                     )
-                                    : null, // Viewer tidak bisa edit/hapus
+                                    : null, // Jika bukan admin/kasir, tidak ada tombol aksi
                           ),
                         );
                       },

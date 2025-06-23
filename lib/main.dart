@@ -30,18 +30,25 @@ String currentUserRole = '';
 
 // Class utama aplikasi (root widget)
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  // Mendefinisikan kelas MyApp sebagai widget utama aplikasi, turunan dari StatelessWidget
+  const MyApp({
+    super.key,
+  }); // Konstruktor MyApp, memanggil konstruktor superclass dengan key opsional
 
   @override
   Widget build(BuildContext context) {
+    // Override method build untuk membangun tampilan widget
     return MaterialApp(
-      title: 'Toko Warda', // Judul aplikasi di tab / task manager
+      // Mengembalikan widget MaterialApp sebagai root aplikasi
+      title: 'Toko Warda', // Judul aplikasi yang muncul di task manager
       debugShowCheckedModeBanner:
-          false, // Hilangkan banner debug pojok kanan atas
+          false, // Menghilangkan banner "debug" di pojok kanan atas saat mode debug
       theme: ThemeData(
-        primarySwatch: Colors.green, // Tema warna dominan aplikasi
+        primarySwatch:
+            Colors.green, // Mengatur tema warna utama aplikasi menjadi hijau
       ),
-      home: const LoginPage(), // Halaman pertama yang muncul = LoginPage
+      home:
+          const LoginPage(), // Menetapkan halaman pertama yang muncul adalah LoginPage
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart'; // Import Supabase
 import 'login_page.dart'; // Import LoginPage (buat pindah balik setelah register)
 
 class RegisterPage extends StatefulWidget {
+  // Widget halaman register
   const RegisterPage({super.key}); // Constructor
 
   @override
@@ -13,11 +14,12 @@ class _RegisterPageState extends State<RegisterPage> {
   final emailController = TextEditingController(); // Controller input email
   final passwordController =
       TextEditingController(); // Controller input password
-  String selectedRole = 'viewer'; // default role = viewer
+  String selectedRole = 'viewer'; // Default role = viewer
 
   bool isLoading = false; // Status loading
 
   Future<void> register() async {
+    // Fungsi untuk proses register
     setState(() {
       isLoading = true; // Munculkan loading saat proses
     });

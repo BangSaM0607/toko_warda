@@ -5,42 +5,51 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 // Definisi class BarangFormPage (halaman form tambah/edit barang)
 class BarangFormPage extends StatefulWidget {
-  final dynamic barang; // Data barang (jika null → mode tambah)
+  // Widget halaman form tambah/edit barang
+  final dynamic barang; // Data barang (null = tambah, ada = edit)
   const BarangFormPage({super.key, this.barang});
 
   @override
-  State<BarangFormPage> createState() => _BarangFormPageState();
-}
+  State<BarangFormPage> createState() => _BarangFormPageState(); // Membuat state untuk widget ini
+} // Definisi state untuk BarangFormPage
 
 class _BarangFormPageState extends State<BarangFormPage> {
+  // State dari BarangFormPage
   // Key untuk validasi form
   final formKey = GlobalKey<FormState>();
 
   // Controller untuk tiap field input
-  final namaController = TextEditingController();
-  final kategoriController = TextEditingController();
-  final stokController = TextEditingController();
-  final satuanController = TextEditingController();
-  final hargaController = TextEditingController();
-  final deskripsiController = TextEditingController();
-  final barcodeController = TextEditingController();
+  final namaController = TextEditingController(); // Nama barang
+  final kategoriController = TextEditingController(); // Kategori barang
+  final stokController = TextEditingController(); // Stok barang
+  final satuanController = TextEditingController(); // Satuan barang
+  final hargaController = TextEditingController(); // Harga barang
+  final deskripsiController = TextEditingController(); // Deskripsi barang
+  final barcodeController = TextEditingController(); // Barcode barang
 
   // State apakah sedang proses simpan
-  bool isSaving = false;
+  bool isSaving = false; // Status apakah sedang menyimpan data
 
   @override
   void initState() {
-    super.initState();
+    super.initState(); // Inisialisasi controller
 
     // Jika mode edit → isi field dengan data barang
     if (widget.barang != null) {
-      namaController.text = widget.barang['nama_barang'] ?? '';
-      kategoriController.text = widget.barang['kategori'] ?? '';
-      stokController.text = widget.barang['stok']?.toString() ?? '';
-      satuanController.text = widget.barang['satuan'] ?? '';
-      hargaController.text = widget.barang['harga']?.toString() ?? '';
-      deskripsiController.text = widget.barang['deskripsi'] ?? '';
-      barcodeController.text = widget.barang['barcode'] ?? '';
+      namaController.text =
+          widget.barang['nama_barang'] ?? ''; // Ambil nama barang
+      kategoriController.text =
+          widget.barang['kategori'] ?? ''; // Ambil kategori
+      stokController.text =
+          widget.barang['stok']?.toString() ??
+          ''; // Ambil stok (convert ke string)
+      satuanController.text = widget.barang['satuan'] ?? ''; // Ambil satuan
+      hargaController.text =
+          widget.barang['harga']?.toString() ??
+          ''; // Ambil harga (convert ke string)
+      deskripsiController.text =
+          widget.barang['deskripsi'] ?? ''; // Ambil deskripsi
+      barcodeController.text = widget.barang['barcode'] ?? ''; // Ambil barcode
     }
   }
 
@@ -48,28 +57,34 @@ class _BarangFormPageState extends State<BarangFormPage> {
   Future<void> saveBarang() async {
     // Validasi form → jika tidak valid tampil Snackbar
     if (!formKey.currentState!.validate()) {
-      showSnackbar('Form kosong / gagal');
-      return;
+      // Cek validasi form
+      showSnackbar('Form kosong / gagal'); // Tampilkan pesan error
+      return; // Jika tidak valid, hentikan proses
     }
 
     // Set state saving true
     setState(() {
-      isSaving = true;
+      isSaving = true; // Tampilkan indikator saving
     });
 
     // Buat data payload untuk insert/update
     final payload = {
-      'nama_barang': namaController.text.trim(),
-      'kategori': kategoriController.text.trim(),
-      'stok': int.tryParse(stokController.text.trim()) ?? 0,
-      'satuan': satuanController.text.trim(),
-      'harga': int.tryParse(hargaController.text.trim()) ?? 0,
-      'deskripsi': deskripsiController.text.trim(),
-      'barcode': barcodeController.text.trim(),
+      'nama_barang': namaController.text.trim(), // Ambil nama barang
+      'kategori': kategoriController.text.trim(), // Ambil kategori
+      'stok':
+          int.tryParse(stokController.text.trim()) ??
+          0, // Ambil stok (convert ke int, default 0 jika gagal)
+      'satuan': satuanController.text.trim(), // Ambil satuan
+      'harga':
+          int.tryParse(hargaController.text.trim()) ??
+          0, // Ambil harga (convert ke int, default 0 jika gagal)
+      'deskripsi': deskripsiController.text.trim(), // Ambil deskripsi
+      'barcode': barcodeController.text.trim(), // Ambil barcode
     };
 
     try {
       if (widget.barang == null) {
+        // Jika barang null, berarti mode tambah
         // Mode tambah barang baru
         await Supabase.instance.client.from('toko_warda').insert(payload);
         showSnackbar('Tambah Barang berhasil');
@@ -90,7 +105,7 @@ class _BarangFormPageState extends State<BarangFormPage> {
     } finally {
       // Reset state saving
       setState(() {
-        isSaving = false;
+        isSaving = false; // Sembunyikan loading
       });
     }
   }
