@@ -2,10 +2,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'login_page.dart'; // untuk currentUserRole
 
 class BarangFormPage extends StatefulWidget {
   final dynamic data;
-
   const BarangFormPage({super.key, this.data});
 
   @override
@@ -18,28 +18,25 @@ class _BarangFormPageState extends State<BarangFormPage> {
   final TextEditingController _namaController = TextEditingController();
   final TextEditingController _stokController = TextEditingController();
   final TextEditingController _hargaController = TextEditingController();
-  final TextEditingController _satuanController = TextEditingController();
-  final TextEditingController _deskripsiController = TextEditingController();
-  final TextEditingController _barcodeController = TextEditingController();
-
-  String _kategori = 'Sembako';
+  final TextEditingController _kategoriController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     if (widget.data != null) {
       _namaController.text = widget.data['nama_barang'];
-      _kategori = widget.data['kategori'];
       _stokController.text = widget.data['stok'].toString();
       _hargaController.text = widget.data['harga'].toString();
-      _satuanController.text = widget.data['satuan'];
-      _deskripsiController.text = widget.data['deskripsi'] ?? '';
-      _barcodeController.text = widget.data['barcode'] ?? '';
+      _kategoriController.text = widget.data['kategori'];
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (currentUserRole == 'viewer') {
+      return const Scaffold(body: Center(child: Text('Akses ditolak')));
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.data == null ? 'Tambah Barang' : 'Edit Barang'),
@@ -52,27 +49,8 @@ class _BarangFormPageState extends State<BarangFormPage> {
             decoration: const InputDecoration(labelText: 'Nama Barang'),
           ),
           const SizedBox(height: 10),
-          DropdownButtonFormField<String>(
-            value: _kategori,
-            items:
-                [
-                  'Sembako',
-                  'Minuman',
-                  'Snack',
-                  'Alat Dapur',
-                  'Kebutuhan Rumah',
-                  'Perawatan Tubuh',
-                ].map((kategori) {
-                  return DropdownMenuItem(
-                    value: kategori,
-                    child: Text(kategori),
-                  );
-                }).toList(),
-            onChanged: (value) {
-              setState(() {
-                _kategori = value!;
-              });
-            },
+          TextField(
+            controller: _kategoriController,
             decoration: const InputDecoration(labelText: 'Kategori'),
           ),
           const SizedBox(height: 10),
@@ -87,27 +65,13 @@ class _BarangFormPageState extends State<BarangFormPage> {
             keyboardType: TextInputType.number,
             decoration: const InputDecoration(labelText: 'Harga'),
           ),
-          const SizedBox(height: 10),
-          TextField(
-            controller: _satuanController,
-            decoration: const InputDecoration(labelText: 'Satuan'),
-          ),
-          const SizedBox(height: 10),
-          TextField(
-            controller: _deskripsiController,
-            decoration: const InputDecoration(labelText: 'Deskripsi'),
-          ),
-          const SizedBox(height: 10),
-          TextField(
-            controller: _barcodeController,
-            decoration: const InputDecoration(labelText: 'Barcode'),
-          ),
           const SizedBox(height: 20),
           ElevatedButton(
             onPressed: () async {
               if (_namaController.text.isEmpty ||
                   _stokController.text.isEmpty ||
-                  _hargaController.text.isEmpty) {
+                  _hargaController.text.isEmpty ||
+                  _kategoriController.text.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Mohon lengkapi semua data'),
@@ -121,12 +85,9 @@ class _BarangFormPageState extends State<BarangFormPage> {
 
               final data = {
                 'nama_barang': _namaController.text,
-                'kategori': _kategori,
+                'kategori': _kategoriController.text,
                 'stok': int.tryParse(_stokController.text) ?? 0,
-                'satuan': _satuanController.text,
                 'harga': int.tryParse(_hargaController.text) ?? 0,
-                'deskripsi': _deskripsiController.text,
-                'barcode': _barcodeController.text,
               };
 
               try {
@@ -142,11 +103,14 @@ class _BarangFormPageState extends State<BarangFormPage> {
                 Navigator.pop(context, 'saved');
               } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Gagal menyimpan data'),
+                  SnackBar(
+                    content: Text('Gagal menyimpan: $e'),
                     behavior: SnackBarBehavior.floating,
-                    margin: EdgeInsets.symmetric(horizontal: 50, vertical: 200),
-                    duration: Duration(seconds: 2),
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 50,
+                      vertical: 200,
+                    ),
+                    duration: const Duration(seconds: 2),
                   ),
                 );
               }

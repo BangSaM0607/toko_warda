@@ -11,7 +11,7 @@ class LoginPage extends StatefulWidget {
   State<LoginPage> createState() => _LoginPageState();
 }
 
-String currentUserRole = 'viewer'; // global
+String currentUserRole = 'viewer'; // default viewer
 
 class _LoginPageState extends State<LoginPage> {
   final emailController = TextEditingController();
